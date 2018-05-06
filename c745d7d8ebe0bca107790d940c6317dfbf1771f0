@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a1b2ade7_194e2ba0",
+        "filename": "sepolicy/platform_app.te",
+        "patchSetId": 2
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 4
+      },
+      "writtenOn": "2018-05-06T18:52:19Z",
+      "side": 1,
+      "message": "this should be \nallow platform_app qemu_hw_mainkeys_prop:file  { read open };\ninstead of adding the second line",
+      "revId": "c745d7d8ebe0bca107790d940c6317dfbf1771f0",
+      "serverId": "4c0b52a2-b090-4331-a190-b288d812d081",
+      "unresolved": false
+    }
+  ]
+}
