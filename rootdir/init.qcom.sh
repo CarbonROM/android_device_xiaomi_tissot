@@ -89,20 +89,6 @@ start_msm_irqbalance_8939()
 	fi
 }
 
-start_msm_irqbalance_8952()
-{
-        if [ -f /system/vendor/bin/msm_irqbalance ]; then
-                case "$platformid" in
-                     "241" | "263" | "264" | "268" | "269" | "270" | "271")
-                        start vendor.msm_irqbalance;;
-                esac
-                case "$platformid" in
-                     "266" | "274" | "277" | "278")
-                        start vendor.msm_irqbal_lb;;
-                esac
-	fi
-}
-
 start_msm_irqbalance660()
 {
 	if [ -f /vendor/bin/msm_irqbalance ]; then
@@ -120,6 +106,14 @@ start_msm_irqbalance()
 	if [ -f /vendor/bin/msm_irqbalance ]; then
 		start vendor.msm_irqbalance
 	fi
+}
+
+start_copying_prebuilt_qcril_db()
+{
+    if [ -f /vendor/radio/qcril_database/qcril.db -a ! -f /data/vendor/radio/qcril.db ]; then
+        cp /vendor/radio/qcril_database/qcril.db /data/vendor/radio/qcril.db
+        chown -h radio.radio /data/vendor/radio/qcril.db
+    fi
 }
 
 baseband=`getprop ro.baseband`
@@ -298,60 +292,6 @@ case "$target" in
     "msm8909")
         start_vm_bms
         ;;
-    "msm8952")
-        start_msm_irqbalance_8952
-	 if [ -f /sys/devices/soc0/soc_id ]; then
-             soc_id=`cat /sys/devices/soc0/soc_id`
-         else
-             soc_id=`cat /sys/devices/system/soc/soc0/id`
-         fi
-
-	 if [ -f /sys/devices/soc0/platform_subtype_id ]; then
-	      platform_subtype_id=`cat /sys/devices/soc0/platform_subtype_id`
-	 fi
-	 if [ -f /sys/devices/soc0/hw_platform ]; then
-	       hw_platform=`cat /sys/devices/soc0/hw_platform`
-	 fi
-	 case "$soc_id" in
-	      "264")
-	           case "$hw_platform" in
-			    "Surf")
-			         case "$platform_subtype_id" in
-			              "1" | "2")
-			                  setprop qemu.hw.mainkeys 0
-			                  ;;
-				  esac
-			          ;;
-			    "MTP")
-			         case "$platform_subtype_id" in
-			              "3")
-			                  setprop qemu.hw.mainkeys 0
-			                  ;;
-				  esac
-			          ;;
-			    "QRD")
-			         case "$platform_subtype_id" in
-			              "0")
-			                  setprop qemu.hw.mainkeys 0
-			                  ;;
-				  esac
-				  ;;
-		     esac
-		     ;;
-		 "266" | "274" | "277" | "278")
-	              case "$hw_platform" in
-			       "Surf" | "RCM")
-                                    if [ $panel_xres -eq 1440 ]; then
-				       setprop qemu.hw.mainkeys 0
-				    fi
-				    ;;
-				"MTP" | "QRD")
-				       setprop qemu.hw.mainkeys 0
-				       ;;
-		      esac
-		      ;;
-	esac
-	;;
     "msm8937")
         start_msm_irqbalance_8939
         if [ -f /sys/devices/soc0/soc_id ]; then
@@ -410,7 +350,7 @@ case "$target" in
                                     #setprop qemu.hw.mainkeys 0
                                     ;;
                        "QRD")
-                                    setprop qemu.hw.mainkeys 1
+                                    setprop qemu.hw.mainkeys 0
                                     #setprop qemu.hw.mainkeys 0
                                     ;;
                   esac
@@ -419,8 +359,11 @@ case "$target" in
         ;;
 esac
 
-# Set shared touchpanel nodes ownership (these are proc_symlinks to the real sysfs nodes)
-chown -LR system.system /proc/touchpanel
+#
+# Copy qcril.db if needed for RIL
+#
+start_copying_prebuilt_qcril_db
+echo 1 > /data/vendor/radio/db_check_done
 
 #
 # Make modem config folder and copy firmware config to that folder for RIL
@@ -443,6 +386,10 @@ if [ ! -f /firmware/verinfo/ver_info.txt -o "$prev_version_info" != "$cur_versio
 fi
 cp /firmware/image/modem_pr/mbn_ota.txt /data/vendor/radio/modem_config
 chown radio.radio /data/vendor/radio/modem_config/mbn_ota.txt
+cp /firmware/image/modem_pr/mbn_oin.txt /data/vendor/radio/modem_config
+chown radio.radio /data/vendor/radio/modem_config/mbn_oin.txt
+cp /firmware/image/modem_pr/mbn_ogl.txt /data/vendor/radio/modem_config
+chown radio.radio /data/vendor/radio/modem_config/mbn_ogl.txt
 echo 1 > /data/vendor/radio/copy_complete
 
 #check build variant for printk logging
@@ -458,3 +405,4 @@ case "$buildvariant" in
         echo "4 4 1 4" > /proc/sys/kernel/printk
         ;;
 esac
+
